@@ -3,7 +3,7 @@
 @Author: tako star
 @Date: 2020-04-09 13:37:48
 @LastEditors: tako star
-@LastEditTime: 2020-05-19 09:54:34
+@LastEditTime: 2020-05-19 11:55:21
 '''
 from regex import sub, match, split
 from freemind import mm
@@ -114,29 +114,37 @@ class mindmap:
         # *先确定各种划分符号个数,再进行处理
         info = findSignal(childList, signaList)
 
-        def delInSeq(info, top=0, corrent=1):
-            '''获取结构符号中导致序列非连续的子部分的位置(如123123456->123456)'''
-            # *corrent表示当前的符号次序
+        def delInSeq(info, top=0, current=1):
+            '''
+            最重要的核心函数(待改进)
+            获取结构符号中导致序列非连续的子部分的位置(如123123456->123[1234]456)
+            '''
+            # *current表示当前的符号次序
             # TODO:假如只有一个(理论上不可能出现,因为这么做没意义)
             # TODO:但实际上会出现这种情况
-            # *结束条件
-            if (len(info) - 1 > corrent and corrent != 0):
-                if (info[corrent - 1][1] == info[corrent + 1][1] - 1
-                        and (info[corrent][1] == info[corrent - 1][1]
-                             or info[corrent][1] == info[corrent - 1][1] + 1)):
-                    return corrent, corrent
-            if (info[corrent][1] != info[corrent - 1][1] + 1):
+            # *特殊结束条件
+            if (len(info) - 1 > current and current != 0):
+                if (info[current - 1][1] == info[current + 1][1] - 1
+                        and (info[current][1] == info[current - 1][1]
+                             or info[current][1] == info[current - 1][1] + 1)):
+                    return current, current
+            if (info[current][1] != info[current - 1][1] + 1):
                 # *假如当前结构符号与前一个非顺位,更新top
-                top = corrent
-            if (len(info) <= corrent + 1):
-                return top, corrent
-            if (info[corrent][1] == info[corrent + 1][1] - 1):
-                return delInSeq(info, top, corrent + 1)
+                top = current
+
+            if (len(info) <= current + 1):
+                # *当current超出范围则返回(优先判断)
+                return top, current
+            elif (info[current][1] == info[current + 1][1] - 1):
+                # *如果与后一个顺位,则递归
+                return delInSeq(info, top, current + 1)
             else:
-                return top, corrent
+                return current, len(info) - 1
 
         while (len(info) != info[-1][1] + 1):
             # *当存在的结构符号数不等于findSignal函数查找到的最后符号数(索引+1),此时需要获取多余的符号位置信息方便排除,应注意的是才此处info信息是属于childeList的
+
+            # *此处top,bottom为要删除的部分的上限和下限
             top, bottom = delInSeq(info)
             # if (info[0][1] == info[1][1] and info[1][1] + 1 == info[2][1]):
             #     info.pop[0]
